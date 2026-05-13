@@ -18,13 +18,15 @@
 const char *archivoLog = "./logs.log";
 
 // Macro de logging
+// Async-safe LOG macro using write() instead of FILE operations
 #define LOG(level, msg, ...) \
     do { \
-        FILE *file = fopen(archivoLog, "a"); \
-        if (file) { \
-            const char *level_str[] = {"ERROR", "WARN", "INFO"}; \
-            fprintf(file, "[%s] %s:%d: " msg "\n", level_str[level], __FILE__, __LINE__, ##__VA_ARGS__); \
-            fclose(file); \
+        int fd = open(archivoLog, O_WRONLY | O_CREAT | O_APPEND, 0644); \
+        if (fd != -1) { \
+            dprintf(fd, "[%s] %s:%d: " msg "\n", \
+                (level == LOG_LEVEL_ERROR ? "ERROR" : (level == LOG_LEVEL_WARN ? "WARN" : "INFO")), \
+                __FILE__, __LINE__, ##__VA_ARGS__); \
+            close(fd); \
         } \
     } while(0)
 
